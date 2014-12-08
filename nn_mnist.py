@@ -4,9 +4,11 @@ Created on Fri Dec  5 20:05:22 2014
 
 @author: nunomarques
 """
+"""
 #RUN ONCE
-#train=pd.read_csv("./data/train.csv")
-#test=pd.read_csv("./data/test.csv")
+train=pd.read_csv("./data/train.csv")
+test=pd.read_csv("./data/test.csv")
+"""
 """
 import nn
 reload(nn)
@@ -14,7 +16,6 @@ import nn_mnist
 reload(nn_mnist)
 from nn_mnist import *
 from nn import *
-#train,_=read_data()
 nn=NNet_test()
 nn.set_dataset(train)
 nn.set_alpha(0.1)
@@ -40,6 +41,7 @@ nn.initialize_weight_matrixes(0.12)
 nn.initialize_deltas()
 #nn.set_data()
 nn.grad_descent()
+p=nn.predict(test)
 """
 
 from nn import *
@@ -80,9 +82,10 @@ class NNet_test(NNet):
         self.target_variable=extend_target_variable(y,classes)
         
     def predict(self,test):
+        self.set_batch_size(test.shape[0])
+        self.initialize_data()
         self.get_input_layer().get_vertex(0).set_data(test.as_matrix())
-        nn.set_batch_size(test.shape[0])
-        nn.forward_prop()
-        return nn.get_estimate()
+        self.forward_prop()
+        return self.get_estimate()
     
     

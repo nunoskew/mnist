@@ -16,6 +16,8 @@ def submit(filename):
     a submission file 'filename'.csv
     
     """
+    train=pd.read_csv("./data/train.csv")
+    test=pd.read_csv("./data/test.csv")
     nn=NNet_test()
     nn.set_dataset(train)
     nn.set_alpha(0.1)
@@ -42,11 +44,11 @@ def submit(filename):
     #nn.set_data()
     nn.grad_descent()    
     #read data
-
+    p=nn.predict(test)
     #merge PassengerId and predictions to create the submission DataFrame
     df=pd.DataFrame(np.concatenate([np.array(range(1,28001)).reshape(28000,1),\
                     np.argmax(p,axis=1).reshape(28000,1)],axis=1))
     #set up column names
     df.columns=['ImageId','Label']
     #create submission csv
-    df.to_csv(filename,header=True,index=False)
+    df.to_csv('./submissions/'+filename,header=True,index=False)
