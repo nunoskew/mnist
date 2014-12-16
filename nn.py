@@ -139,6 +139,18 @@ class Vertex:
         
     def set_num_nodes(self,n):
         self.num_nodes=n
+    def receive_forward_prop(self,in_vertex,batch_size):
+        self.data+=\
+                    np.dot(np.concatenate((np.ones((batch_size,1)),in_vertex.data),axis=1)\
+                    ,in_vertex.weight_matrix)
+    def normalize(self):
+        self.data=sigmoid(self.data)
+        
+class SoftmaxVertex(Vertex):
+    def normalize(self):
+        self.data=np.exp(self.data)
+        self.data=self.data/self.data.sum(axis=1)[:,None]
+        
 
     
 class NNet:
@@ -188,10 +200,9 @@ class NNet:
         for l_idx in range(1,(self.num_layers())):
             for vertex in self.get_layer(l_idx).get_vertexes():
                 for in_vertex in vertex.get_pointed_from():
-                    vertex.data+=\
-                                np.dot(np.concatenate((np.ones((self.get_batch_size(),1)),in_vertex.data),axis=1)\
-                                ,in_vertex.weight_matrix)
-                vertex.data=sigmoid(vertex.data)                    
+                    vertex.receive_forward_prop(in_vertex,self.get_batch_size())
+                vertex.normalize()
+                   
                 
     def get_batch_size(self):
         return self.batch_size
@@ -295,6 +306,11 @@ class Layer:
     def add_n_vertex(self,num_vertex):
         for i in range(num_vertex):        
             self.vertexes.append(Vertex())
+            
+    def add_n_softmax_vertex(self,num_vertex):
+        for i in range(num_vertex):        
+            self.vertexes.append(SoftmaxVertex())
+            
     def get_vertexes(self):
         return self.vertexes
         
@@ -316,6 +332,8 @@ class InputLayer(Layer):
 
     def get_data(self):
         return self.data
+        
+
 
         
 class HiddenLayer(Layer):
