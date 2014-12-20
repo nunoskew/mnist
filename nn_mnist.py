@@ -18,10 +18,12 @@ from nn_mnist import *
 from nn import *
 nn=NNet_test()
 nn.set_dataset(train)
-nn.set_alpha(0.1)
+nn.set_alpha(0.5)
 nn.set_n_iter(3000)
 nn.set_lambd(0)
-nn.set_batch_size(1000)
+nn.set_batch_size(100)
+nn.set_epsilon(0.99)
+nn.set_weight_update("momentum")
 
 nn.add_n_layers(4)
 
@@ -41,7 +43,7 @@ nn.get_output_layer().get_vertex(0).set_num_nodes(10)
 nn.get_output_layer().get_vertex(0).add_in_edge(nn.get_layer(2).get_vertex(0))
 
 nn.initialize_data()
-nn.initialize_weight_matrixes(0.12)
+nn.initialize_weight_matrixes(0.01)
 nn.initialize_deltas()
 #nn.set_data()
 nn.grad_descent()

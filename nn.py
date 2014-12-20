@@ -11,11 +11,12 @@ from nn import *
 data=pd.read_table("ok.txt",",",header=0)
 nn=NNet()
 nn.set_dataset(data)
-nn.set_alpha(0.01)
-nn.set_n_iter(500)
+nn.set_alpha(1)
+nn.set_n_iter(1000)
 nn.set_lambd(0)
 nn.set_batch_size(112)
-
+nn.set_epsilon(0.01)
+nn.set_weight_update("regular")
 nn.add_n_layers(5)
 
 nn.get_input_layer().add_n_vertex(2)
@@ -40,12 +41,12 @@ nn.get_layer(3).add_n_vertex(1)
 nn.get_layer(3).get_vertex(0).set_num_nodes(6)
 nn.get_layer(3).get_vertex(0).add_in_edge(nn.get_layer(2).get_vertex(0))
 
-nn.get_output_layer().add_n_vertex(1)
+nn.get_output_layer().add_n_softmax_vertex(1)
 nn.get_output_layer().get_vertex(0).set_num_nodes(24)
 nn.get_output_layer().get_vertex(0).add_in_edge(nn.get_layer(3).get_vertex(0))
 
 nn.initialize_data()
-nn.initialize_weight_matrixes(0.1)
+nn.initialize_weight_matrixes(0.01)
 nn.initialize_deltas()
 
 nn.grad_descent()
@@ -145,6 +146,21 @@ class Vertex:
                     ,in_vertex.weight_matrix)
     def normalize(self):
         self.data=sigmoid(self.data)
+    
+    def update_weights(self,option,alpha,epsilon):
+        if option=="NAG":
+            print "OK"
+        elif option=="regular": 
+
+            self.weight_matrix-=(alpha*self.grad)
+        elif option=="momentum":
+
+            self.weight_matrix=epsilon*self.weight_matrix-\
+                                (alpha*self.grad)
+        elif option=="rmsprop":
+            rms=self.weight_matrix.copy()
+            rms=((1-epsilon)*self.weight_matrix)+(epsilon*(self.grad**2))
+            self.weight_matrix+=((alpha/np.sqrt(rms))*self.grad)
         
 class SoftmaxVertex(Vertex):
     def normalize(self):
@@ -162,10 +178,14 @@ class NNet:
         self.n_iter=0
         self.lambd=0
         self.dataset=pd.DataFrame()
+        self.option="regular"
+        self.epsilon=0
     def set_dataset(self,d):
         data=one_hot_encoding(d, ['relation','person1','person2'])
         data=data.as_matrix()
         self.dataset=data
+    def set_weight_update(self,opt):
+        self.option=opt
     def set_n_iter(self,n):
         self.n_iter=n
     def set_alpha(self,a):
@@ -174,6 +194,8 @@ class NNet:
         self.lambd=l
     def set_target_variable(self,y):
         self.target_variable=y
+    def set_epsilon(self,eps):
+        self.epsilon=eps
         
     def add_n_layers(self,num_layers):
         if num_layers>2:
@@ -295,7 +317,10 @@ class NNet:
             self.back_prop()
             for layer_idx in range(self.num_layers()-1):
                 for vertex in self.get_layer(layer_idx).get_vertexes():
-                    vertex.weight_matrix-=(self.alpha*vertex.grad)
+                    vertex.update_weights(option=self.option,\
+                                          alpha=self.alpha,\
+                                          epsilon=self.epsilon)                    
+                    #vertex.weight_matrix-=(self.alpha*vertex.grad)
             self.compute_cost()
             print 'Iteration '+str(i)+": "+str(self.get_cost())
             
